@@ -279,12 +279,6 @@
     line-height: 1.4;
     transition: background 0.15s ease;
   }
-  .opt.correct {
-    background: var(--correct-bg);
-    border-color: var(--correct);
-    color: #124a2c;
-    font-weight: 600;
-  }
   .opt-label {
     flex: none;
     display: inline-flex;
@@ -299,24 +293,16 @@
     font-size: 12px;
     color: var(--primary);
   }
-  .opt.correct .opt-label {
-    background: var(--correct);
-    border-color: var(--correct);
-    color: #fff;
+  .right-answer {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    font-size: 13.5px;
+    color: var(--muted);
   }
-  .opt.correct .stamp {
-    position: absolute;
-    top: -8px;
-    right: -6px;
-    background: var(--correct);
-    color: #fff;
-    font-size: 10px;
+  .right-answer strong {
+    color: var(--primary-dark);
     font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 999px;
-    transform: rotate(6deg);
-    box-shadow: 0 2px 5px rgba(28,138,79,0.4);
-    letter-spacing: 0.3px;
   }
   .location {
     margin-top: 12px;
@@ -400,8 +386,9 @@ async function fetchJSON(params) {
   return data;
 }
 
-async function loadSheets() {
+async function loadSheets(isPop) {
   state = { screen: 'sheets', sheet: null, topic: null };
+  if (!isPop) history.pushState({ screen: 'sheets' }, '', '');
   updateBreadcrumb();
   setLoading();
   try {
@@ -425,10 +412,11 @@ function renderSheets(sheets) {
   app.innerHTML = html;
 }
 
-async function selectSheet(sheetName) {
+async function selectSheet(sheetName, isPop) {
   state.sheet = sheetName;
   state.screen = 'topics';
   state.topic = null;
+  if (!isPop) history.pushState({ screen: 'topics', sheet: sheetName }, '', '');
   updateBreadcrumb();
   setLoading();
   try {
@@ -454,9 +442,10 @@ function renderTopics(topics) {
   app.innerHTML = html;
 }
 
-async function selectTopic(topicName) {
+async function selectTopic(topicName, isPop) {
   state.topic = topicName;
   state.screen = 'questions';
+  if (!isPop) history.pushState({ screen: 'questions', sheet: state.sheet, topic: topicName }, '', '');
   updateBreadcrumb();
   setLoading();
   try {
@@ -485,13 +474,12 @@ function renderQuestions(questions) {
     html += '<div class="opts">';
     const opts = { A: q.a, B: q.b, C: q.c, D: q.d };
     for (const label in opts) {
-      const isCorrect = String(q.rightOption).trim().toUpperCase() === label;
-      html += `<div class="opt ${isCorrect ? 'correct' : ''}">`;
-      if (isCorrect) html += '<span class="stamp">✓ সঠিক</span>';
-      html += `<span class="opt-label">${label}</span><span>${escapeHTML(opts[label])}</span>`;
-      html += '</div>';
+      html += `<div class="opt"><span class="opt-label">${label}</span><span>${escapeHTML(opts[label])}</span></div>`;
     }
     html += '</div>';
+    const rightLabel = String(q.rightOption).trim().toUpperCase();
+    const rightText = opts[rightLabel] !== undefined ? opts[rightLabel] : '';
+    html += `<div class="right-answer">Right option : <strong>${escapeHTML(rightLabel)}. ${escapeHTML(rightText)}</strong></div>`;
     html += `<div class="location">SL: ${escapeHTML(q.sl)}</div>`;
     html += '</div>';
   });
@@ -513,8 +501,22 @@ function escapeQuotes(str) {
   return String(str).replace(/'/g, "\\'");
 }
 
-// initial load
-loadSheets();
+// browser / hardware back button navigates within the app instead of leaving the page
+window.addEventListener('popstate', (e) => {
+  const s = e.state;
+  if (!s || s.screen === 'sheets') {
+    loadSheets(true);
+  } else if (s.screen === 'topics') {
+    selectSheet(s.sheet, true);
+  } else if (s.screen === 'questions') {
+    state.sheet = s.sheet;
+    selectTopic(s.topic, true);
+  }
+});
+
+// initial load — set the base history entry without pushing a duplicate
+history.replaceState({ screen: 'sheets' }, '', '');
+loadSheets(true);
 </script>
 
 </body>
