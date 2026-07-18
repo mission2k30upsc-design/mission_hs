@@ -189,7 +189,7 @@ const app = document.getElementById('app');
 const breadcrumb = document.getElementById('breadcrumb');
 
 let state = {
-  screen: 'sheets', // sheets | topics | questions
+  screen: 'Subjects', // sheets | topics | questions
   sheet: null,
   topic: null
 };
@@ -311,7 +311,7 @@ function renderQuestions(questions) {
       html += `<div class="opt ${isCorrect ? 'correct' : ''}"><span class="opt-label">${label}.</span>${escapeHTML(opts[label])}</div>`;
     }
     html += '</div>';
-    html += `<div class="location">Location (SL Number): ${escapeHTML(q.sl)}</div>`;
+    html += `<div class="location">Location : ${escapeHTML(q.sl)}</div>`;
     html += '</div>';
   });
 
